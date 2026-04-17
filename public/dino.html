@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Pikachu Run</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      background: #f7f7f7; 
+      overflow: hidden; 
+      font-family: 'Courier New', Courier, monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 220px;
+    }
+    #game-container {
+      position: relative;
+      width: 600px;
+      height: 150px;
+      background: #fff;
+      border-bottom: 2px solid #555;
+      overflow: hidden;
+    }
+    #pikachu {
+      position: absolute;
+      bottom: 0;
+      left: 50px;
+      width: 40px;
+      height: 40px;
+      background: url('/pikachu.gif') no-repeat center;
+      background-size: contain;
+      z-index: 10;
+    }
+    .obstacle {
+      position: absolute;
+      bottom: 0;
+      width: 25px;
+      height: 40px;
+      background: #333;
+      border-radius: 4px;
+    }
+    #score {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 18px;
+      color: #555;
+      font-weight: bold;
+    }
+    #msg {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      display: none;
+      z-index: 20;
+    }
+    #msg h1 { font-size: 24px; margin-bottom: 10px; color: #1f3324; }
+    #msg p { font-size: 14px; color: #666; }
+  </style>
+</head>
+<body>
+
+  <div id="game-container">
+    <div id="pikachu"></div>
+    <div id="score">00000</div>
+    <div id="msg">
+      <h1>GAME OVER</h1>
+      <p>Press Space to Restart</p>
+    </div>
+  </div>
+
+  <script>
+    const pikachu = document.getElementById('pikachu');
+    const container = document.getElementById('game-container');
+    const scoreEl = document.getElementById('score');
+    const msg = document.getElementById('msg');
+
+    let isJumping = false;
+    let isGameOver = false;
+    let score = 0;
+    let gameSpeed = 5;
+    let gravity = 0.6;
+    let jumpStrength = 10;
+    let velocityY = 0;
+    let pikachuBottom = 0;
+
+    let obstacles = [];
+    let gameActive = false;
+
+    function jump() {
+      if (isGameOver) {
+        restart();
+        return;
+      }
+      if (!gameActive) {
+        gameActive = true;
+        gameLoop();
+      }
+      if (!isJumping) {
+        isJumping = true;
+        velocityY = jumpStrength;
+      }
+    }
+
+    function restart() {
+      isGameOver = false;
+      gameActive = true;
+      score = 0;
+      gameSpeed = 5;
+      pikachuBottom = 0;
+      velocityY = 0;
+      obstacles.forEach(obs => container.removeChild(obs.el));
+      obstacles = [];
+      msg.style.display = 'none';
+      pikachu.style.bottom = '0px';
+      requestAnimationFrame(gameLoop);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        jump();
+      }
+    });
+
+    container.addEventListener('touchstart', jump);
+    container.addEventListener('mousedown', jump);
+
+    function createObstacle() {
+      const el = document.createElement('div');
+      el.className = 'obstacle';
+      el.style.right = '-30px';
+      // Randomly make it a "cactus" or a "ball" color
+      el.style.backgroundColor = Math.random() > 0.5 ? '#4d6a51' : '#B69269';
+      container.appendChild(el);
+      obstacles.push({
+        el: el,
+        x: -30
+      });
+    }
+
+    let lastTime = 0;
+    let obstacleTimer = 0;
+
+    function gameLoop(time) {
+      if (isGameOver || !gameActive) return;
+
+      if (!lastTime) lastTime = time;
+      const dt = time - lastTime;
+      lastTime = time;
+
+      // Gravity / Jump
+      if (isJumping) {
+        pikachuBottom += velocityY;
+        velocityY -= gravity;
+        if (pikachuBottom <= 0) {
+          pikachuBottom = 0;
+          isJumping = false;
+          velocityY = 0;
+        }
+        pikachu.style.bottom = pikachuBottom + 'px';
+      }
+
+      // Obstacles
+      obstacleTimer += 1;
+      if (obstacleTimer > 100 + Math.random() * 50) {
+        createObstacle();
+        obstacleTimer = 0;
+      }
+
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        let obs = obstacles[i];
+        obs.x += gameSpeed;
+        obs.el.style.right = obs.x + 'px';
+
+        // Collision
+        const pRect = pikachu.getBoundingClientRect();
+        const oRect = obs.el.getBoundingClientRect();
+
+        if (
+          pRect.right - 10 > oRect.left &&
+          pRect.left + 10 < oRect.right &&
+          pRect.bottom - 5 > oRect.top
+        ) {
+          gameOver();
+        }
+
+        if (obs.x > 630) {
+          container.removeChild(obs.el);
+          obstacles.splice(i, 1);
+          score += 10;
+          scoreEl.innerText = score.toString().padStart(5, '0');
+          if (score % 100 === 0) gameSpeed += 0.2;
+        }
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function gameOver() {
+      isGameOver = true;
+      msg.style.display = 'block';
+    }
+
+    // Start prompt
+    const prompt = document.createElement('div');
+    prompt.style.position = 'absolute';
+    prompt.style.top = '50%';
+    prompt.style.left = '50%';
+    prompt.style.transform = 'translate(-50%, -50%)';
+    prompt.innerText = 'PRESS SPACE TO START';
+    prompt.style.color = '#B69269';
+    prompt.style.fontWeight = 'bold';
+    container.appendChild(prompt);
+
+    const originalJump = jump;
+    jump = function() {
+      if (!gameActive && !isGameOver) {
+        prompt.style.display = 'none';
+        gameActive = true;
+        requestAnimationFrame(gameLoop);
+      }
+      originalJump();
+    };
+
+  </script>
+</body>
+</html>

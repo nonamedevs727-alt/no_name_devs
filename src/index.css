@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@100;300;400&family=League+Gothic&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-display: "Syne", ui-sans-serif, system-ui, sans-serif;
+  --font-social: "Social Gothic", "League Gothic", sans-serif;
+  
+  --animate-spotlight: spotlight 2s ease .75s 1 forwards;
+  @keyframes spotlight {
+    0% {
+      opacity: 0;
+      transform: translate(-72%, -62%) scale(0.5);
+    }
+    100% {
+      opacity: 1;
+      transform: translate(-50%,-40%) scale(1);
+    }
+  }
+}
+
+@layer utilities {
+  .big-text-style {
+    font-family: var(--font-social);
+    font-weight: 700;
+    font-size: clamp(3.5rem, 12vw, 122px);
+    line-height: 1.007;
+    letter-spacing: -0.03em;
+    color: #FF73A4;
+    text-transform: uppercase;
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #0a0a0a;
+  color: #e0e0e0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (pointer: fine) {
+  /* Let custom cursor exist, but don't hide system cursor for better debugging/UX */
+  /* * { cursor: none !important; } */
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}
